@@ -31,20 +31,41 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Extract Android project
+        shell: bash
         run: |
-          set -eu
+          set -euo pipefail
+
           ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*Cloud*Build*Package*.zip' -print -quit)"
-          test -n "$ZIP_FILE"
-          mkdir extracted
-          unzip -q "$ZIP_FILE" -d extracted
-          PROJECT_DIR="$(find extracted -type f -name settings.gradle -printf '%h\n' -quit)"
-          test -n "$PROJECT_DIR"
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: Android build ZIP not found in repository root."
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -oq "$ZIP_FILE" -d extracted
+
+          PROJECT_DIR="$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) -printf '%h\n' -quit)"
+
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: No settings.gradle or settings.gradle.kts found in the ZIP."
+            echo "The ZIP may not contain a complete native Android Gradle project."
+            echo "Files found in the ZIP:"
+            find extracted -maxdepth 3 -type f | head -80
+            exit 1
+          fi
+
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Android project found at: $PROJECT_DIR"
 
       - name: Build debug APK
+        shell: bash
         run: |
+          set -euo pipefail
           cd "$PROJECT_DIR"
           gradle assembleDebug --stacktrace
 
