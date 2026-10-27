@@ -1,0 +1,56 @@
+name: Build ATLAS Android APK
+
+on:
+workflow_dispatch:
+push:
+paths:
+- "*.zip"
+- ".github/workflows/build-atlas-apk.yml"
+
+permissions:
+contents: read
+
+jobs:
+build:
+runs-on: ubuntu-latest
+steps:
+- name: Check out repository
+uses: actions/checkout@v4
+
+  - name: Set up Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: "17"
+
+  - name: Find and extract Android project ZIP
+    shell: bash
+    run: |
+      set -euo pipefail
+      ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*Cloud*Build*Package*.zip' -print -quit)"
+      if [ -z "$ZIP_FILE" ]; then
+        echo "ATLAS ZIP not found in repository root."
+        exit 1
+      fi
+      mkdir -p extracted
+      unzip -q "$ZIP_FILE" -d extracted
+      GRADLEW="$(find extracted -type f -name gradlew -print -quit)"
+      if [ -z "$GRADLEW" ]; then
+        echo "No gradlew found. The ZIP may not contain a complete Android project."
+        exit 1
+      fi
+      echo "PROJECT_DIR=$(dirname "$GRADLEW")" >> "$GITHUB_ENV"
+
+  - name: Build debug APK
+    run: |
+      cd "$PROJECT_DIR"
+      chmod +x ./gradlew
+      ./gradlew assembleDebug --stacktrace
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: ATLAS-Planet-Finder-debug-APK
+      path: extracted/**/build/outputs/apk/debug/*.apk
+      if-no-files-found: error
+      retention-days: 14
