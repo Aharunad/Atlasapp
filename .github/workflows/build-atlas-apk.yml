@@ -1,10 +1,11 @@
-name: Build ATLAS APK
+name: Build ATLAS Android APK
 
-on:
+'on':
   workflow_dispatch:
   push:
-    branches:
-      - main
+    paths:
+      - '*.zip'
+      - '.github/workflows/build-atlas-apk.yml'
 
 permissions:
   contents: read
@@ -14,72 +15,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - name: Find and extract Android project ZIP
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No Android project ZIP found in the repository root."
-            exit 1
-          fi
-
-          echo "Found Android ZIP: $ZIP_FILE"
-          mkdir -p extracted
-          unzip -q "$ZIP_FILE" -d extracted
-
-          GRADLEW="$(find extracted -type f -name gradlew -print -quit)"
-
-          if [ -z "$GRADLEW" ]; then
-            echo "ERROR: No gradlew found. The ZIP may not contain a complete Android project."
-            exit 1
-          fi
-
-          PROJECT_DIR="$(dirname "$GRADLEW")"
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          chmod +x "$GRADLEW"
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Extract Android project
+        run: |
+          set -eu
+          ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*Cloud*Build*Package*.zip' -print -quit)"
+          test -n "$ZIP_FILE"
+          mkdir extracted
+          unzip -q "$ZIP_FILE" -d extracted
+          PROJECT_DIR="$(find extracted -type f -name settings.gradle -printf '%h\n' -quit)"
+          test -n "$PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
       - name: Build debug APK
-        shell: bash
         run: |
-          set -euo pipefail
           cd "$PROJECT_DIR"
-          ./gradlew assembleDebug --stacktrace
-
-      - name: Find generated APK
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          APK="$(find "$PROJECT_DIR" -type f -path '*/build/outputs/apk/*/*.apk' -name '*debug*.apk' -print -quit)"
-
-          if [ -z "$APK" ]; then
-            echo "ERROR: Build finished but no debug APK was found."
-            exit 1
-          fi
-
-          mkdir -p "$GITHUB_WORKSPACE/apk-output"
-          cp "$APK" "$GITHUB_WORKSPACE/apk-output/ATLAS-Planet-Finder-debug.apk"
-          echo "APK copied successfully."
+          gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ATLAS-Planet-Finder-APK
-          path: apk-output/ATLAS-Planet-Finder-debug.apk
+          name: ATLAS-Futurica-debug-APK
+          path: extracted/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
