@@ -1,0 +1,33 @@
+name: Inspect Atlas Library source archive
+on:
+  push:
+    branches:
+      - atlas-library-feature-expansion
+    paths:
+      - '.github/workflows/atlas-inspect.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source and produce inventory
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/atlas
+          unzip -q 'ATLAS_Futurica_v0.2_Source.zip' -d /tmp/atlas
+          find /tmp/atlas -maxdepth 5 -type f | sort > /tmp/inventory.txt
+          cat /tmp/inventory.txt
+          echo '--- build files ---'
+          find /tmp/atlas -type f \( -name 'settings.gradle*' -o -name 'build.gradle*' -o -name 'AndroidManifest.xml' \) -print
+          echo '--- source directories ---'
+          find /tmp/atlas -maxdepth 5 -type d | sort | head -200
+          cd /tmp
+          zip -qr atlas-source-extracted.zip atlas
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atlas-source-inspection
+          path: /tmp/atlas-source-extracted.zip
+          retention-days: 3
