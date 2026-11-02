@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Atlas Library</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header" id="appHeader">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div><div class="brand-name">ATLAS <span>LIBRARY</span></div><div class="brand-caption">A quieter place to read.</div></div>
+      </div>
+      <button class="icon-button import-top" id="importButton" aria-label="Import PDF" title="Import PDF">＋</button>
+    </header>
+
+    <main class="home-view" id="homeView">
+      <section class="home-heading">
+        <div class="eyebrow">YOUR PERSONAL SHELF</div>
+        <h1>Books, at your pace.</h1>
+        <p>Read your PDFs or listen to them like audiobooks.</p>
+        <button class="primary-button" id="emptyImport">＋&nbsp; Import a PDF</button>
+      </section>
+      <section class="shelf-section">
+        <div class="section-heading"><h2>Your library</h2><span id="bookCount">0 documents</span></div>
+        <div class="book-list" id="bookList">
+          <div class="empty-state"><div class="empty-glyph">Aa</div><strong>Your shelf is waiting.</strong><p>Import a PDF to begin reading.</p></div>
+        </div>
+      </section>
+      <div class="footer-note">PRIVATE BY DESIGN · STORED ON THIS DEVICE</div>
+    </main>
+
+    <section class="reader-view" id="readerView" hidden>
+      <div class="reader-toolbar">
+        <button class="back-button" id="backButton" aria-label="Back to library">←</button>
+        <div class="reader-document-heading"><strong id="readerTitle">Document</strong><span id="readerPageMeta">Page 1</span></div>
+        <button class="small-button" id="zoomOut" aria-label="Decrease page scale">−</button>
+        <button class="small-button" id="zoomIn" aria-label="Increase page scale">＋</button>
+      </div>
+
+      <div class="document-pane" id="documentPane" aria-label="Scrollable PDF document">
+        <div class="page-stack" id="pageStack"></div>
+      </div>
+
+      <section class="player-dock" id="playerDock" aria-label="Audiobook controls">
+        <div class="player-topline">
+          <div class="player-state">
+            <span class="live-dot" id="liveDot"></span>
+            <span id="playbackStatus">READY TO LISTEN</span>
+          </div>
+          <button class="follow-toggle active" id="followToggle" aria-pressed="true">FOLLOW VOICE&nbsp; <span>●</span></button>
+        </div>
+        <div class="player-main">
+          <button class="transport-button play-toggle" id="playToggle" aria-label="Play">▶</button>
+          <div class="player-title-block">
+            <strong id="playerTitle">Atlas Library</strong>
+            <span id="playerSubtitle">Choose a page or press play</span>
+          </div>
+          <button class="transport-button stop-button" id="stopButton" aria-label="Stop playback" title="Stop">■</button>
+        </div>
+        <div class="page-track">
+          <input id="pageScrub" type="range" min="1" max="1" value="1" aria-label="PDF page">
+          <span id="pageCounter">1 / 1</span>
+        </div>
+        <div class="player-settings">
+          <label class="setting-control"><span>VOICE</span><select id="voiceSelect" aria-label="Pocket TTS voice"></select></label>
+          <label class="setting-control"><span>SPEED</span><select id="speedSelect" aria-label="Speech speed">
+            <option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1.0×</option><option value="1.1">1.1×</option><option value="1.2">1.2×</option><option value="1.35">1.35×</option><option value="1.5">1.5×</option>
+          </select></label>
+          <button class="preview-button" id="previewVoice">Preview voice</button>
+        </div>
+        <div class="download-line" id="downloadLine" hidden><div class="download-bar"><span id="downloadProgress"></span></div><small id="downloadText">Preparing Pocket TTS…</small></div>
+      </section>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
