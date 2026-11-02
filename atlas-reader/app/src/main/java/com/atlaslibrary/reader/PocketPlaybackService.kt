@@ -22,6 +22,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -56,10 +58,11 @@ class PocketPlaybackService : Service() {
     private val generation = AtomicLong(0)
     private val streamRef = AtomicReference<TtsStream?>(null)
     private val trackRef = AtomicReference<AudioTrack?>(null)
-    private val pauseLock = Object()
+    private val pauseLock = ReentrantLock()
+    private val pauseChanged = pauseLock.newCondition()
     private val modelFile by lazy { File(File(filesDir, "atlas-library/models").apply { mkdirs() }, MODEL_NAME) }
     private val cachePath by lazy { File(cacheDir, "pocket-tts-cache").apply { mkdirs() }.absolutePath }
-    private val prefs by lazy { getSharedPreferences("atlas_library_settings_v1", MODE_PRIVATE) }
+    private val prefs by lazy { getSharedPreferences("atlas_library_settings_v1", Context.MODE_PRIVATE) }
     private var session: MediaSessionCompat? = null
     private var audioManager: AudioManager? = null
     private var focusRequest: AudioFocusRequest? = null
@@ -408,7 +411,12 @@ class PocketPlaybackService : Service() {
     }
 
     private fun waitIfPaused(token: Long) {
-        synchronized(pauseLock) { while (paused && token == generation.get()) pauseLock.wait(250) }
+        pauseLock.lock()
+        try {
+            while (paused && token == generation.get()) pauseChanged.await(250, TimeUnit.MILLISECONDS)
+        } finally {
+            pauseLock.unlock()
+        }
     }
 
     private fun pauseNow() {
@@ -422,7 +430,8 @@ class PocketPlaybackService : Service() {
     private fun resumeNow() {
         if (state != "PAUSED" && state != "PREPARING") return
         paused = false
-        synchronized(pauseLock) { pauseLock.notifyAll() }
+        pauseLock.lock()
+        try { pauseChanged.signalAll() } finally { pauseLock.unlock() }
         trackRef.get()?.let { runCatching { it.play() } }
         holdCpu()
         if (state == "PAUSED") setState("PLAYING")
@@ -431,7 +440,8 @@ class PocketPlaybackService : Service() {
     private fun stopNow() {
         cancelCurrent()
         paused = false
-        synchronized(pauseLock) { pauseLock.notifyAll() }
+        pauseLock.lock()
+        try { pauseChanged.signalAll() } finally { pauseLock.unlock() }
         setState("STOPPED")
         emit("stopped", JSONObject().put("bookId", bookId).put("page", page))
         releaseCpu()
