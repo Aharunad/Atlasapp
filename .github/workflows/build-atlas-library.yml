@@ -1,0 +1,62 @@
+name: Build Atlas Library PDF Audiobook APK
+on:
+  push:
+    branches: [atlas-library-audiobook]
+    paths:
+      - 'atlas-reader/**'
+      - '.github/workflows/build-atlas-library.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build and verify Atlas Library
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+      - name: Install Android build packages
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Validate reader JavaScript
+        run: node --check atlas-reader/app/src/main/assets/app.js
+      - name: Build APK and run Android unit-test task
+        run: |
+          set -euo pipefail
+          gradle -p atlas-reader --no-daemon --max-workers=2 testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Verify APK package and included reader runtime
+        run: |
+          set -euo pipefail
+          APK="atlas-reader/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/atlas-badging.txt
+          grep -F "package: name='com.atlaslibrary.reader'" /tmp/atlas-badging.txt
+          grep -F "application-label:'Atlas Library'" /tmp/atlas-badging.txt
+          unzip -l "$APK" | grep -F 'assets/index.html'
+          unzip -l "$APK" | grep -F 'assets/app.js'
+          unzip -l "$APK" | grep -F 'assets/styles.css'
+          apksigner verify --verbose "$APK"
+          sha256sum "$APK" | tee "$APK.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Atlas-Library-PDF-Audiobook-APK
+          path: |
+            atlas-reader/app/build/outputs/apk/debug/app-debug.apk
+            atlas-reader/app/build/outputs/apk/debug/app-debug.apk.sha256
+          retention-days: 14
