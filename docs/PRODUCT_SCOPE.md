@@ -110,3 +110,47 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - Menus must remain anchored to the app shell and never drift with scroll, keyboard appearance, or navigation.
 - Use accessible labels, minimum touch targets, loading/error/empty states, and confirmation for destructive actions.
 - Preserve library data during upgrades with versioned database migrations and tested backup/export paths.
+
+
+## Document-pane scrolling and editing interaction
+
+- The document viewport is its own independently scrollable pane. Vertical swipes over the PDF/EPUB/text page scroll the document only; they must not move the outer app shell, header, navigation, or settings.
+- Keep app chrome anchored and stationary while the reader pane scrolls. The reader toolbar may remain sticky; only the document content region owns the vertical scroll.
+- Avoid nested competing scroll containers. Define one clear scroll owner for the active document and ensure touch gestures begun inside the document stay within it.
+- On touch devices, support natural vertical scrolling, text selection, copy/share, highlight, annotation, and bookmark actions without hijacking ordinary scroll gestures.
+- If a PDF is displayed as rendered pages, scroll between pages inside the PDF viewport; if text-reflow mode is available, scroll the reflowed text inside the same bounded pane.
+- Preserve current page, scroll offset, zoom, and reading position through rotation, opening/closing menus, changing settings, and process recreation.
+- Test long documents, very short documents, landscape, keyboard appearance, accessibility font scaling, and rapid scroll/tap interactions.
+
+## Pocket TTS implementation and performance requirements
+
+### Runtime selection and truthfulness
+- The requested engine is Kyutai Pocket TTS, approximately 100M parameters. The official upstream package is Python/PyTorch; it is not an Android library that can simply be embedded in the APK.
+- Evaluate a maintained Android-compatible runtime such as the community LiteRT conversion/Kotlin API. Treat it as a community conversion, pin an exact release/commit and model checksum, review its license and attribution, and test its outputs against known upstream samples.
+- Do not claim official Kyutai Android support where it is a third-party port.
+- The engine must expose a health check, model/version identifier, selected voice, warm/cold state, and actionable failure details. The UI must clearly distinguish Pocket TTS from Android system TTS fallback.
+
+### Voice catalogue
+- Provide a searchable voice picker populated from a versioned, verified voice catalogue rather than hard-coded UI labels.
+- Include every voice supported by the selected model/runtime pack, with name, language, preview, availability/download state, and attribution/license details.
+- Upstream catalogue observed during implementation planning includes: Alba, Giovanni, Lola, Jürgen, Rafael, Estelle, Anna, Azelma, Bill Boerst, Caro Davy, Charles, Cosette, Eponine, Eve, Fantine, George, Jane, Jean, Javert, Marius, Mary, Michael, Paul, Peter Yearsley, Stuart Bell, and Vera. The shipped Android pack may expose a smaller subset; never display a voice as selectable unless its embedding/reference assets are actually bundled or downloadable and validated.
+- Allow importing a user's own voice reference audio only if the chosen runtime supports it; validate format, duration, sample rate, size, and explicit consent. Explain that voice cloning requires rights/permission and must not be used to impersonate someone without consent.
+- Cache prepared voice states/embeddings per voice where supported so switching voices does not repeatedly perform expensive preprocessing.
+
+### Streaming, speed, and memory
+- Stream audio in short sentence-aware chunks; begin playback as soon as the first valid chunk is ready and synthesize the next chunk ahead of playback.
+- Keep one model instance warm for a playback session; avoid reloading the model for every sentence, page, or article.
+- Preload and cache selected voice state, reuse buffers, bound the queue, and apply backpressure so long books cannot exhaust memory.
+- Run synthesis on a dedicated background executor; stream PCM to AudioTrack with correct buffer sizing, sample-rate handling, underrun recovery, and audio-focus management.
+- Benchmark CPU/XNNPACK and any supported GPU delegate on actual target devices. Do not assume GPU is faster: Pocket TTS upstream reports no general GPU speedup for its small batch-1 model, while community LiteRT conversions report device-dependent results.
+- Add a user-visible quality/performance mode only if each mode has been measured and validated; never silently reduce quality or change the voice.
+- Provide warm-up after model initialization, but do not block app startup. Report first-audio latency and real-time factor (audio seconds generated per wall-clock second).
+
+### Required TTS validation before release
+- Run an automated smoke test that loads the actual packaged/downloaded model, loads every advertised voice, synthesizes known short phrases, checks finite PCM samples/non-empty output, verifies expected sample rate/channels, and plays the result through the Android audio output path.
+- Compare selected test phrases with reference outputs for truncation, clipping, silence, corrupted audio, and voice-selection regressions.
+- Test first-run download, checksum validation, interrupted download/resume, insufficient storage, corrupted model repair, offline startup, model upgrade, and rollback.
+- Test long-form reading for at least 30 minutes across multiple document pages/articles, with pause/resume/stop, background playback, screen lock, audio focus interruptions, Bluetooth/headset controls, and app lifecycle changes.
+- Track time-to-first-audio, real-time factor, underruns, dropped chunks, memory peak, CPU use, and thermal throttling. Test cold and warm starts.
+- Verify the selected voice actually changes the synthesized audio; verify every listed voice individually. A UI picker test alone is insufficient.
+- Release gate: no claim of "working" or "high speed" until the exact Android runtime and model pass the smoke suite and are exercised on a physical target-class Android phone. If Pocket TTS fails, show a truthful fallback status and preserve reading via the separately identified Android TTS provider.
