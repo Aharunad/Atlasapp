@@ -166,3 +166,17 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - Android force-stop, device shutdown, and OS process termination are exceptional cases and may terminate playback; do not promise playback survives force-stop. Persist enough state to recover the document and last confirmed reading position when the user opens the app again.
 - Keep the foreground-service notification truthful and actionable, including document title and current playback state. Request only the media playback foreground-service permissions required by the target Android SDK; handle notification permission denial without silently falling back to Activity-bound playback.
 - Release tests on physical Android devices: press Home while playing; switch between apps; lock/unlock the screen; use notification and headset controls; reopen the reader and verify synchronized page/sentence position; explicitly Exit and verify audio stops and notification disappears; dismiss from Recents and verify the documented behaviour; force-stop and verify honest recovery behaviour on next launch.
+
+
+## RSS article image handling
+
+- RSS/Atom feed cards and saved article views should display the article's lead image when the feed or article page provides one.
+- Extract image candidates from standard RSS 2.0 `<enclosure>` elements, Media RSS fields (including `media:content` and `media:thumbnail`), Atom `<link rel="enclosure">` entries, and safely parsed article-page Open Graph/Twitter metadata and article content.
+- Prefer a valid, sufficiently large lead image; use a deterministic fallback order and avoid showing tracking pixels, tiny icons, avatars, logos, or duplicate images as the article hero.
+- Preserve image captions, credit/attribution, source URL, and alternative text when available. Do not invent captions or attribution.
+- Download images lazily and asynchronously; show a lightweight placeholder while loading. Cache thumbnails and optionally full-resolution images with bounded storage, cache eviction, and per-article refresh. Never block feed text or audio playback on image loading.
+- Keep images optional: feeds without images must render cleanly with no broken-image icon or empty reserved block. Provide a graceful fallback for unsupported formats, corrupt files, HTTP errors, and offline access.
+- Security and privacy: allow only safe HTTPS image URLs by default; validate redirects, content type, and response size; reject SVG or other active content unless securely rasterized; do not execute remote content. Avoid leaking local network access through URL fetches.
+- Accessibility and layout: provide useful alt text when supplied, preserve aspect ratio, avoid layout jumps, and support small screens and dark/light themes.
+- User controls: include a setting to enable/disable article images and a clear cached-image storage action only if both controls are fully implemented. Respect data-saver/network constraints and avoid automatic full-resolution downloads on mobile data.
+- Tests: cover RSS enclosure, Media RSS, Atom enclosure, Open Graph extraction, missing/invalid images, duplicate candidates, redirects, offline cache, storage limits, and feeds whose images load slowly or fail.
