@@ -175,7 +175,7 @@ class PocketPlaybackService : Service() {
                 ensureModel()
                 val engine = ensureEngine(voice, rate)
                 requestFocus()
-                if (token == generation.get()) setState("PLAYING")
+                if (token == generation.get()) setState(if (paused) "PAUSED" else "PLAYING")
                 for (p in startPage.coerceIn(1, pages)..pages) {
                     if (token != generation.get()) break
                     waitIfPaused(token)
