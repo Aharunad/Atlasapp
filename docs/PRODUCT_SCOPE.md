@@ -202,3 +202,13 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - Apply theme changes immediately without restarting the app, persist the choice across process death and upgrades, and avoid flashes of the wrong theme during startup.
 - Respect Android status/navigation bar icon contrast and edge-to-edge insets in both themes. Ensure selected, disabled, focused, and pressed states remain distinguishable and meet accessibility contrast requirements.
 - Test every screen and component in both themes, including images, text selection, dialogs, keyboard appearance, PDF scrolling, RSS cache-clearing confirmation, and playback while backgrounded. Verify theme preference survives force-stop and relaunch.
+
+
+## Dark-mode document reading surface
+
+- In the PDF reader's **text/reflow reading mode**, Dark Mode must render the extracted document text in a light colour (white or a carefully tuned near-white) on a genuinely dark/black page background. This applies to the document content itself, not just the surrounding app controls.
+- Keep the original PDF page-rendering mode available and preserve its original page colours by default. Do not apply a crude colour inversion to scanned pages, photographs, diagrams, charts, or other image content.
+- Where a PDF has an extractable text layer, provide a clearly labelled reading/reflow mode that lays out that text in the reader's own independently scrollable document viewport and applies the selected Light/Dark reading palette. Preserve paragraph order and page references where possible, and clearly indicate when complex layouts cannot be faithfully reflowed.
+- For image-only/scanned PDFs without extractable text, explain that OCR is required before dark text/reflow mode can be offered; never show an empty or fabricated text view.
+- The reader's theme choice must update the text/reflow surface immediately, persist across app restarts, and remain consistent with the global app theme. Maintain readable contrast, selection/highlight visibility, links, annotations, and accessible focus states.
+- Test both original-page and text/reflow modes with selectable text, scanned pages, images, diagrams, tables, mixed page content, long documents, and page navigation in Light and Dark modes.
