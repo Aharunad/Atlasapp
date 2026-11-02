@@ -51,7 +51,7 @@ jobs:
           unzip -l "$APK" | grep -F 'assets/index.html'
           unzip -l "$APK" | grep -F 'assets/app.js'
           unzip -l "$APK" | grep -F 'assets/styles.css'
-          apksigner verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK" | tee "$APK.sha256"
       - uses: actions/upload-artifact@v4
         with:
