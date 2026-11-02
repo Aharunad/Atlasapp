@@ -191,3 +191,14 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - Clear only RSS-owned files and database records, using explicit storage namespaces/table ownership. Never use a broad cache-directory wipe or delete files based only on filename extensions.
 - Handle an interrupted clear safely and idempotently; do not leave orphaned image files or inconsistent article metadata.
 - Tests: verify RSS cache and image files are removed, feed subscriptions remain, and PDF files, other library documents, notes, bookmarks, highlights, and reading progress are unchanged.
+
+
+## Global dark mode setting
+
+- Add a persistent **Settings → Appearance → Dark Mode** toggle that changes the entire Atlas Library interface, not only the document reader.
+- In dark mode, app surfaces/backgrounds that are white or light become appropriately dark, and text/icons that are black or dark become light with accessible contrast. Do not apply a naive pixel inversion filter: define semantic theme tokens for backgrounds, surfaces, text, borders, icons, controls, dialogs, menus, notifications where app-controlled, and reader chrome.
+- Apply the selected theme consistently to the home/library screen, navigation, settings, dialogs, RSS cards and article views, PDF reader chrome, playback controls, and empty/loading/error states. Preserve document content colours and PDF page appearance by default; provide a separate document-page night/invert option only if it can be implemented without damaging images, diagrams, or colour meaning.
+- Provide Light, Dark, and optionally System default modes. If only the requested toggle is shipped initially, its off state is Light and its on state is Dark.
+- Apply theme changes immediately without restarting the app, persist the choice across process death and upgrades, and avoid flashes of the wrong theme during startup.
+- Respect Android status/navigation bar icon contrast and edge-to-edge insets in both themes. Ensure selected, disabled, focused, and pressed states remain distinguishable and meet accessibility contrast requirements.
+- Test every screen and component in both themes, including images, text selection, dialogs, keyboard appearance, PDF scrolling, RSS cache-clearing confirmation, and playback while backgrounded. Verify theme preference survives force-stop and relaunch.
