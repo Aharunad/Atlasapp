@@ -427,7 +427,7 @@ class MainActivity : ComponentActivity() {
         }
 
         private fun valid(requestId: String) = validRequest.matches(requestId)
-        private fun respond(requestId: String, ok: Boolean, type: String, data: JSONObject? = null, error: String? = null) {
+        fun respond(requestId: String, ok: Boolean, type: String, data: JSONObject? = null, error: String? = null) {
             val payload = JSONObject().put("requestId", requestId).put("ok", ok).put("type", type)
             if (data != null) payload.put("data", data)
             if (error != null) payload.put("error", error.take(500))
