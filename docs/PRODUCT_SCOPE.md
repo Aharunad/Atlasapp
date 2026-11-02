@@ -82,3 +82,31 @@ This project is an independent Android reading and personal knowledge applicatio
 ## Explicit implementation note
 
 The Apollo source inspected on 2026-11-02 currently delegates its reader speech to Android's selected system TextToSpeech engine. That is not proof that Kyutai Pocket TTS is bundled or running. Atlas Library must verify and package the actual requested Pocket TTS distribution before presenting it as the active engine.
+
+
+## Mandatory playback interaction contract
+
+The reader's primary playback control is a **single toggle button**, not a play-only button.
+
+- Idle or stopped: show a Play icon; tapping starts the current book/article from the saved position (or selected passage).
+- Playing: show a Pause icon; tapping pauses the active utterance and preserves the exact playback position.
+- Paused: show a Play icon; tapping resumes from the paused position without restarting the passage.
+- Stopped or completed: return to the Play state; the next tap starts from the defined restart/resume position.
+- A separate, always-visible **Stop** control remains available. Stop terminates the playback session, clears queued chunks, releases audio focus/resources, and returns the UI to the stopped state. It must not be the only way to pause.
+- The toggle's icon, accessible label, and state must be driven by the playback coordinator's authoritative state—not by optimistic UI-only flags.
+- Define explicit states: IDLE, PREPARING, PLAYING, PAUSED, STOPPING, STOPPED, COMPLETED, and ERROR. Reject invalid transitions and ignore stale callbacks from earlier utterances/sessions.
+- Pause must stop further chunk submission immediately. If the TTS runtime cannot pause an utterance natively, stop the current chunk, retain the unspoken text offset, and resume from that offset; do not replay already-spoken words.
+- Stop must be distinct from Pause. Pause retains queue and position; Stop discards the active queue and resets the session according to the reader's documented behavior.
+- The same toggle and Stop behavior must work for PDF/EPUB/TXT/Markdown books and RSS/article reading, including automatic page/chapter continuation.
+- Background notification controls and headset/media buttons must invoke the same coordinator transitions as the in-app controls.
+- Show a clear progress indicator and current sentence/chunk. Disable controls only while a real transition is in progress, and expose errors with a retry path.
+- Add automated state-machine tests for Play → Pause → Resume → Stop, Pause during synthesis, Stop during queued chunks, completion, TTS error, rapid repeated taps, app background/foreground, and stale completion callbacks.
+- Release acceptance: manually verify on a real Android device that tapping the primary button once starts, tapping it again pauses, tapping again resumes at the correct word, and the separate Stop button ends playback. A build or UI screenshot alone does not satisfy this gate.
+
+## Additional quality bar for the complete feature set
+
+- Every settings item must persist across app restart and process death; settings screens must reflect the saved value after reopening.
+- Every menu item and visible button must perform its named action. Remove or clearly label unavailable features rather than shipping decorative controls.
+- Menus must remain anchored to the app shell and never drift with scroll, keyboard appearance, or navigation.
+- Use accessible labels, minimum touch targets, loading/error/empty states, and confirmation for destructive actions.
+- Preserve library data during upgrades with versioned database migrations and tested backup/export paths.
