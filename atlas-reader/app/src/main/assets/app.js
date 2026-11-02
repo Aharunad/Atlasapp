@@ -91,6 +91,9 @@
         setPlaybackState("STOPPED");
         state.autoRead = false;
         break;
+      case "notice":
+        showToast(event.message || "Check Android notification permission for lock-screen controls.");
+        break;
       case "error":
         setPlaybackState("ERROR");
         state.autoRead = false;
