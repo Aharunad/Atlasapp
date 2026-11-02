@@ -4,6 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -40,6 +43,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var bridge: AtlasNativeBridge
     private var pendingPickerRequest: String? = null
     private var receiverRegistered = false
+
+    private val requestNotificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) {
+            runCatching { deliverToWeb("window.atlasNativeEvent", JSONObject().put("type", "notice").put("message", "Allow notifications to use lock-screen audiobook controls.").toString()) }
+        }
+    }
 
     private val openPdf = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val request = pendingPickerRequest
@@ -85,6 +94,10 @@ class MainActivity : ComponentActivity() {
         setContentView(webView)
         ContextCompat.registerReceiver(this, ttsReceiver, IntentFilter(PocketPlaybackService.EVENT), ContextCompat.RECEIVER_NOT_EXPORTED)
         receiverRegistered = true
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
     }
 
