@@ -180,3 +180,14 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - Accessibility and layout: provide useful alt text when supplied, preserve aspect ratio, avoid layout jumps, and support small screens and dark/light themes.
 - User controls: include a setting to enable/disable article images and a clear cached-image storage action only if both controls are fully implemented. Respect data-saver/network constraints and avoid automatic full-resolution downloads on mobile data.
 - Tests: cover RSS enclosure, Media RSS, Atom enclosure, Open Graph extraction, missing/invalid images, duplicate candidates, redirects, offline cache, storage limits, and feeds whose images load slowly or fail.
+
+
+## RSS-only cache clearing
+
+- Add a clearly labelled **Settings → Clear RSS Cache** action.
+- The action removes RSS-only locally cached article copies, downloaded RSS article images/thumbnails, and temporary feed-fetch/cache data. It must not touch imported PDFs/EPUBs or any other non-RSS library documents, notes, bookmarks, highlights, or reading progress.
+- Preserve the user's feed subscriptions and folder configuration by default; clearing downloaded/cache data must not silently unsubscribe or delete feed sources. Saved/offline RSS articles are included in the deletion only if they are stored as part of the RSS cache; explain this scope in the confirmation text.
+- Before deletion, show a concise confirmation stating exactly what RSS data will be cleared and what will remain. After completion, report the amount of storage freed where measurable and refresh RSS screens so removed cached content is no longer presented as available offline.
+- Clear only RSS-owned files and database records, using explicit storage namespaces/table ownership. Never use a broad cache-directory wipe or delete files based only on filename extensions.
+- Handle an interrupted clear safely and idempotently; do not leave orphaned image files or inconsistent article metadata.
+- Tests: verify RSS cache and image files are removed, feed subscriptions remain, and PDF files, other library documents, notes, bookmarks, highlights, and reading progress are unchanged.
