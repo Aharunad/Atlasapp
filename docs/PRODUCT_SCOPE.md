@@ -212,3 +212,17 @@ The reader's primary playback control is a **single toggle button**, not a play-
 - For image-only/scanned PDFs without extractable text, explain that OCR is required before dark text/reflow mode can be offered; never show an empty or fabricated text view.
 - The reader's theme choice must update the text/reflow surface immediately, persist across app restarts, and remain consistent with the global app theme. Maintain readable contrast, selection/highlight visibility, links, annotations, and accessible focus states.
 - Test both original-page and text/reflow modes with selectable text, scanned pages, images, diagrams, tables, mixed page content, long documents, and page navigation in Light and Dark modes.
+
+
+## Pocket TTS optimization priority for the first release
+
+Performance optimization is a first-release engineering priority, not a post-release enhancement.
+
+- Tune the selected Android Pocket TTS runtime for the actual target-class phone (including the user's 4 GB RAM Galaxy A07 class), not just desktop benchmarks.
+- Profile model load time, warm-up, time-to-first-audio, real-time factor, per-chunk latency, memory peak, CPU utilization, audio underruns, battery impact, and thermal throttling on physical devices.
+- Optimize in this order: eliminate repeated model/voice initialization; stream sentence-sized chunks with bounded look-ahead; reuse PCM and preprocessing buffers; cache verified voice state; tune executor/thread count and AudioTrack buffering; then evaluate supported CPU delegates and GPU delegates empirically.
+- Evaluate model quantization or other graph/runtime optimizations only when supported by the chosen conversion. Compare intelligibility, pronunciation, voice identity, clipping, and stability against reference samples before accepting any speed/memory trade-off.
+- Adapt concurrency and prefetch depth to available memory and device thermal state. Prefer a stable, uninterrupted listening session over a short benchmark peak; avoid background work that causes UI jank or competes with active audio.
+- Keep synthesis off the UI thread, cap queued audio, cancel obsolete work on Stop or document/voice changes, and prevent stale synthesis results from entering the active session.
+- Record reproducible baseline and optimized measurements for cold and warm starts, short passages, long-form reading, and background/locked-screen playback. Report actual device/model/runtime details alongside results.
+- Do not advertise a speed multiplier or claim that Pocket TTS is faster than real time unless repeatable measurements on the target device demonstrate it. If it cannot sustain real-time speech, disclose the limitation and provide the separately labelled Android TTS fallback.
