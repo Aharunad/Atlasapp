@@ -1,4 +1,4 @@
-name: Inspect Atlas Library source archive
+name: Inspect Atlas Library source archive (APK preparation)
 on:
   push:
     branches:
