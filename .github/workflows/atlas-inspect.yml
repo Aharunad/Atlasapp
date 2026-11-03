@@ -18,12 +18,12 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/atlas
           unzip -q 'ATLAS_Futurica_v0.2_Source.zip' -d /tmp/atlas
-          find /tmp/atlas -maxdepth 5 -type f | sort > /tmp/inventory.txt
+          find /tmp/atlas -maxdepth 12 -type f | sort > /tmp/inventory.txt
           cat /tmp/inventory.txt
           echo '--- build files ---'
           find /tmp/atlas -type f \( -name 'settings.gradle*' -o -name 'build.gradle*' -o -name 'AndroidManifest.xml' \) -print
           echo '--- source directories ---'
-          find /tmp/atlas -maxdepth 5 -type d | sort | head -200
+          find /tmp/atlas -maxdepth 8 -type d | sort | head -200
           cd /tmp
           zip -qr atlas-source-extracted.zip atlas
       - uses: actions/upload-artifact@v4
